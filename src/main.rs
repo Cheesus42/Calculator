@@ -11,7 +11,14 @@ struct ExpStack {
 impl ExpStack {
     // turning an expression in infix type into a vector of infix type with each element containing
     // an element
-    fn expression_to_stack(&mut self, expression: String) {
+    fn new() -> Self {
+        ExpStack {
+            push_stack: Vec::new(),
+            operator_stack: String::new(),
+            output_stack: Vec::new(),
+        }
+    }
+    fn expression_to_stack(&mut self, expression: &String) {
         for m in expression.chars() {
             if m == ' ' {
                 continue;
@@ -20,14 +27,17 @@ impl ExpStack {
                 self.push_stack.push(m.to_string());
                 continue;
             }
-            let parsed_m: u32 = m
-                .to_string()
-                .parse()
-                .expect("Not a Valid expression allowed expressions: +, -, *, /, (, ), [, ]");
+            m.to_string()
+                .parse::<u32>()
+                .expect("Not a Valid expression. Allowed expressions: +, -, *, /, (, ), [, ]");
+            self.push_stack.push(m.to_string());
         }
     }
 }
 
-fn main() {}
-
-fn string_to_expression() {}
+fn main() {
+    let mut expression = ExpStack::new();
+    let exp = String::from("(  1+2)*3");
+    expression.expression_to_stack(&exp);
+    println!("{:?}", expression.push_stack)
+}
