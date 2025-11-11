@@ -106,38 +106,35 @@ impl ExpStack {
         }
         self.stack = output_stack;
     }
-    // fn solve_rpn(&mut self) -> u32 {
-    //     let mut stack: Vec<u32> = Vec::new();
-    //     let mut input: Vec<char> = self.output_stack.clone();
-    //     input.reverse();
-    //     while let Some(element) = input.pop() {
-    //         if element.is_ascii_digit() {
-    //             stack.push(
-    //                 element
-    //                     .to_digit(10)
-    //                     .expect("not a number or valid operator"),
-    //             );
-    //         } else if "+-*/".contains(element) {
-    //             println!("stack: {:?}", stack);
-    //             let a = stack.pop().expect("Failed to get number a");
-    //             let b = stack.pop().expect("Failed to get number b");
-    //             let result: u32 = match element {
-    //                 '+' => a + b,
-    //                 '-' => a.saturating_sub(b),
-    //                 '*' => a * b,
-    //                 '/' => a / b,
-    //                 _ => {
-    //                     println!("Invalid operator");
-    //                     0
-    //                 }
-    //             };
-    //             stack.push(result);
-    //         }
-    //         println!("output stack {:?}", input);
-    //         println!("calculation stack {:?}", stack);
-    //     }
-    //     stack.pop().expect("Failed to get final result")
-    // }
+    fn solve_rpn(&mut self) -> u32 {
+        let mut number_stack: Vec<Opts> = Vec::new();
+        for element in self.stack.drain(..) {
+            if matches!(element, Opts::Num(_)) {
+                number_stack.push(element);
+            } else {
+                let b = number_stack
+                    .pop()
+                    .expect("Failed to get number b")
+                    .get_num();
+                let a = number_stack
+                    .pop()
+                    .expect("Failed to get number a")
+                    .get_num();
+                let result: Opts = match element {
+                    Opts::Plus => Opts::Num(a + b),
+                    Opts::Minus => Opts::Num(a - b),
+                    Opts::Multiply => Opts::Num(a * b),
+                    Opts::Divide => Opts::Num(a / b),
+                    _ => {
+                        println!("Invalid Operator");
+                        Opts::Num(0)
+                    }
+                };
+                number_stack.push(result);
+            }
+        }
+        number_stack.pop().expect("Failed to get Result").get_num()
+    }
 }
 fn precedence(op: &Opts) -> u8 {
     match op {
@@ -149,8 +146,10 @@ fn precedence(op: &Opts) -> u8 {
 
 fn main() {
     let mut expression = ExpStack::new();
-    let exp = String::from("100*20+9/4(50+8)");
+    let exp = String::from("10+5*3");
     expression.expression_to_stack(&exp);
     expression.shunting_yard();
-    println!("{:?}", expression.stack)
+    println!("{:?}", expression.stack);
+    let result = expression.solve_rpn();
+    println!("{}", result)
 }
