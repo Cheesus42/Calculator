@@ -2,111 +2,136 @@
 // (1+2)*3 = 12+3*
 // 4*5+(2+3) = 23+45*+
 //
-
-use std::error;
+#[derive(Debug)]
+enum Opts {
+    Plus,
+    Minus,
+    Divide,
+    Multiply,
+    Leftpar,
+    Rightpar,
+    Num(u32),
+}
+impl Opts {
+    fn get_num(self) -> u32 {
+        match self {
+            Opts::Num(n) => n,
+            _ => panic!("Expected Num variant"),
+        }
+    }
+}
 
 #[derive(Debug)]
 struct ExpStack {
-    push_stack: Vec<char>,
-    operator_stack: Vec<char>,
-    output_stack: Vec<char>,
+    stack: Vec<Opts>,
 }
 impl ExpStack {
     // turning an expression in infix type into a vector of infix type with each element containing
     // an element
     fn new() -> Self {
-        ExpStack {
-            push_stack: Vec::new(),
-            operator_stack: Vec::new(),
-            output_stack: Vec::new(),
-        }
+        ExpStack { stack: Vec::new() }
     }
     fn expression_to_stack(&mut self, expression: &String) {
+        let mut big: bool = false;
         for m in expression.chars() {
-            if m == ' ' {
-                continue;
-            }
-            if matches!(m, '+' | '-' | '*' | '/' | '(' | ')' | '[' | ']') {
-                if m == '[' {
-                    self.push_stack.push('(');
-                } else if m == ']' {
-                    self.push_stack.push(')');
-                } else {
-                    self.push_stack.push(m);
-                }
-                continue;
-            }
-            m.to_string()
-                .parse::<u32>()
-                .expect("Not a Valid expression. Allowed expressions: +, -, *, /, (, ), [, ]");
-            self.push_stack.push(m);
-        }
-    }
-    fn shunting_yard(&mut self) {
-        for &e in &self.push_stack {
-            // case operator
-            if "+-*/".contains(e) {
-                while let Some(&top) = self.operator_stack.last() {
-                    if precedence(top) >= precedence(e) {
-                        self.output_stack.push(self.operator_stack.pop().unwrap());
-                    } else {
-                        break;
-                    }
-                }
-                self.operator_stack.push(e);
-
-            // case paranthesis
-            } else if e == '(' {
-                self.operator_stack.push(e);
-            } else if e == ')' {
-                while let Some(&top) = self.operator_stack.last() {
-                    if top == '(' {
-                        break;
-                    }
-                    self.output_stack.push(self.operator_stack.pop().unwrap());
-                }
-                self.operator_stack.pop();
-            // case number
-            } else {
-                self.output_stack.push(e);
-            }
-        }
-        // moving the remaining elements onto the output stack
-        while let Some(element) = self.operator_stack.pop() {
-            self.output_stack.push(element);
-        }
-    }
-    fn solve_rpn(&mut self) -> u32 {
-        let mut stack: Vec<u32> = Vec::new();
-        while let Some(element) = self.output_stack.pop() {
-            if element.is_ascii_digit() {
-                stack.push(
-                    element
+            if m.is_ascii_digit() {
+                let num = if big {
+                    let a = self
+                        .stack
+                        .pop()
+                        .expect("Failed to fetch number probably because of false set big flag")
+                        .get_num();
+                    let b = m
                         .to_digit(10)
-                        .expect("not a number or valid operator"),
-                );
-            } else {
-                let a = stack.pop().expect("Failed to get number a");
-                let b = stack.pop().expect("Failed to get number b");
-                let result: u32 = match element {
-                    '+' => a + b,
-                    '-' => a - b,
-                    '*' => a * b,
-                    '/' => a / b as u32,
-                    _ => {
-                        println!("Invalid operator");
-                        0
-                    }
+                        .expect("Failed to convert digit for bigger number");
+                    a * 10 + b
+                } else {
+                    m.to_digit(10)
+                        .expect("Failed to convert to number not in big")
                 };
-                stack.push(result);
+                self.stack.push(Opts::Num(num));
+                big = true;
+            } else {
+                match m {
+                    '+' => self.stack.push(Opts::Plus),
+                    '-' => self.stack.push(Opts::Minus),
+                    '*' => self.stack.push(Opts::Multiply),
+                    '/' => self.stack.push(Opts::Divide),
+                    '(' => self.stack.push(Opts::Leftpar),
+                    ')' => self.stack.push(Opts::Rightpar),
+                    '[' => self.stack.push(Opts::Leftpar),
+                    ']' => self.stack.push(Opts::Rightpar),
+                    _ => println!("Not a valid Operator. Valid Operators: +, -, *, /, (, ), [, ]"),
+                }
             }
         }
-        if stack.len() == 1 {
-            return stack[0];
-        } else {
-            return 0;
-        }
     }
+    // fn shunting_yard(&mut self) {
+    //     for &e in &self.push_stack {
+    //         // case operator
+    //         if "+-*/".contains(e) {
+    //             while let Some(&top) = self.operator_stack.last() {
+    //                 if precedence(top) >= precedence(e) {
+    //                     self.output_stack.push(self.operator_stack.pop().unwrap());
+    //                 } else {
+    //                     break;
+    //                 }
+    //             }
+    //             self.operator_stack.push(e);
+
+    //         // case paranthesis
+    //         } else if e == '(' {
+    //             self.operator_stack.push(e);
+    //         } else if e == ')' {
+    //             while let Some(&top) = self.operator_stack.last() {
+    //                 if top == '(' {
+    //                     break;
+    //                 }
+    //                 self.output_stack.push(self.operator_stack.pop().unwrap());
+    //             }
+    //             self.operator_stack.pop();
+    //         // case number
+    //         } else {
+    //             self.output_stack.push(e);
+    //         }
+    //     }
+    //     // moving the remaining elements onto the output stack
+    //     while let Some(element) = self.operator_stack.pop() {
+    //         self.output_stack.push(element);
+    //     }
+    // }
+    // fn solve_rpn(&mut self) -> u32 {
+    //     let mut stack: Vec<u32> = Vec::new();
+    //     let mut input: Vec<char> = self.output_stack.clone();
+    //     input.reverse();
+    //     while let Some(element) = input.pop() {
+    //         if element.is_ascii_digit() {
+    //             stack.push(
+    //                 element
+    //                     .to_digit(10)
+    //                     .expect("not a number or valid operator"),
+    //             );
+    //         } else if "+-*/".contains(element) {
+    //             println!("stack: {:?}", stack);
+    //             let a = stack.pop().expect("Failed to get number a");
+    //             let b = stack.pop().expect("Failed to get number b");
+    //             let result: u32 = match element {
+    //                 '+' => a + b,
+    //                 '-' => a.saturating_sub(b),
+    //                 '*' => a * b,
+    //                 '/' => a / b,
+    //                 _ => {
+    //                     println!("Invalid operator");
+    //                     0
+    //                 }
+    //             };
+    //             stack.push(result);
+    //         }
+    //         println!("output stack {:?}", input);
+    //         println!("calculation stack {:?}", stack);
+    //     }
+    //     stack.pop().expect("Failed to get final result")
+    // }
 }
 fn precedence(op: char) -> u8 {
     match op {
@@ -119,10 +144,6 @@ fn precedence(op: char) -> u8 {
 
 fn main() {
     let mut expression = ExpStack::new();
-    let exp = String::from("3*(2+5 -9)/3*(4/5)");
+    let exp = String::from("30+4-2");
     expression.expression_to_stack(&exp);
-    expression.shunting_yard();
-    println!("{:?}", expression.output_stack);
-    let result = expression.solve_rpn();
-    println!("{}", result)
 }
