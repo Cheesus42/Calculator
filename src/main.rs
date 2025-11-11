@@ -3,6 +3,8 @@
 // 4*5+(2+3) = 23+45*+
 //
 
+use std::error;
+
 #[derive(Debug)]
 struct ExpStack {
     push_stack: Vec<char>,
@@ -74,6 +76,37 @@ impl ExpStack {
             self.output_stack.push(element);
         }
     }
+    fn solve_rpn(&mut self) -> u32 {
+        let mut stack: Vec<u32> = Vec::new();
+        while let Some(element) = self.output_stack.pop() {
+            if element.is_ascii_digit() {
+                stack.push(
+                    element
+                        .to_digit(10)
+                        .expect("not a number or valid operator"),
+                );
+            } else {
+                let a = stack.pop().expect("Failed to get number a");
+                let b = stack.pop().expect("Failed to get number b");
+                let result: u32 = match element {
+                    '+' => a + b,
+                    '-' => a - b,
+                    '*' => a * b,
+                    '/' => a / b as u32,
+                    _ => {
+                        println!("Invalid operator");
+                        0
+                    }
+                };
+                stack.push(result);
+            }
+        }
+        if stack.len() == 1 {
+            return stack[0];
+        } else {
+            return 0;
+        }
+    }
 }
 fn precedence(op: char) -> u8 {
     match op {
@@ -83,22 +116,13 @@ fn precedence(op: char) -> u8 {
         _ => 0,
     }
 }
-enum Assoc {
-    Left,
-    Right,
-    Invalid,
-}
-fn associativity(op: char) -> Assoc {
-    match op {
-        '+' | '-' | '*' | '/' => Assoc::Left,
-        '^' => Assoc::Right,
-        _ => Assoc::Invalid,
-    }
-}
+
 fn main() {
     let mut expression = ExpStack::new();
-    let exp = String::from("(  1+2)*3");
+    let exp = String::from("3*(2+5 -9)/3*(4/5)");
     expression.expression_to_stack(&exp);
     expression.shunting_yard();
-    println!("{:?}", expression.output_stack)
+    println!("{:?}", expression.output_stack);
+    let result = expression.solve_rpn();
+    println!("{}", result)
 }
