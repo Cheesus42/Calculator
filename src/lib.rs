@@ -37,9 +37,6 @@ pub mod calculator {
         let mut token_stack: Vec<Opts> = Vec::new();
         let mut big: bool = false;
         for m in expression.chars() {
-            if verbosity >= 4 {
-                println!("Expression stack: {:?}", token_stack);
-            }
             if m.is_ascii_digit() {
                 let num = if big {
                     let a = token_stack.pop().ok_or("Bad Number Parse")?.get_num()?;
@@ -64,6 +61,9 @@ pub mod calculator {
                 }
                 big = false;
             }
+            if verbosity >= 4 {
+                println!("Expression stack: {:?}", token_stack);
+            }
         }
         Ok(token_stack)
     }
@@ -72,19 +72,19 @@ pub mod calculator {
         let mut output_stack: Vec<Opts> = Vec::new();
         for element in token_stack.drain(..) {
             // case operator
-            if verbosity >= 1 {
-                println!("shunting_yard output stack: {:?}", output_stack);
-                if verbosity >= 2 {
-                    println!("Operator Stack: {:?}", operator_stack)
-                }
-            }
+
             if !matches!(element, Opts::Leftpar | Opts::Rightpar | Opts::Num(_)) {
                 // while precedence of the current token (element) is smaller or equal to the operator on
                 // the operator stack, it pushes the headof the operator stack to the output
-                while !operator_stack.is_empty()
-                    && element.precedence() <= operator_stack.last().unwrap().precedence()
-                {
-                    output_stack.push(operator_stack.pop().unwrap());
+                while let Some(top) = operator_stack.last() {
+                    if matches!(top, Opts::Leftpar) {
+                        break;
+                    }
+                    if element.precedence() <= operator_stack.last().unwrap().precedence() {
+                        output_stack.push(operator_stack.pop().unwrap());
+                    } else {
+                        break;
+                    }
                 }
                 operator_stack.push(element);
 
@@ -99,6 +99,7 @@ pub mod calculator {
                         break;
                     }
                     output_stack.push(operator_stack.pop().unwrap());
+                    println!("{:?}", operator_stack.last());
                 }
                 // if it never finds the matching paranthesis it returns an error
                 if operator_stack.pop().is_none() {
@@ -108,12 +109,19 @@ pub mod calculator {
             } else {
                 output_stack.push(element);
             }
+            if verbosity >= 1 {
+                println!("shunting_yard output stack: {:?}", output_stack);
+                if verbosity >= 2 {
+                    println!("Operator Stack: {:?}", operator_stack)
+                }
+            }
         }
         // moving the remaining elements onto the output stack
         while let Some(element) = operator_stack.pop() {
             output_stack.push(element);
         }
-        Ok(token_stack)
+        println!("Final RPN Stack: {:?}", output_stack);
+        Ok(output_stack)
     }
     fn solve_rpn(mut token_stack: Vec<Opts>, verb: u8) -> Result<u32, String> {
         let mut number_stack: Vec<Opts> = Vec::new();
@@ -124,14 +132,14 @@ pub mod calculator {
                 let b = number_stack.pop().ok_or("Missing Operand b")?.get_num()?;
                 let a = number_stack.pop().ok_or("Missing Operand a")?.get_num()?;
                 let result: Opts = match element {
-                    Opts::Plus => Opts::Num(a + b),
-                    Opts::Minus => Opts::Num(a - b),
-                    Opts::Multiply => Opts::Num(a * b),
+                    Opts::Plus => Opts::Num(a.saturating_add(b)),
+                    Opts::Minus => Opts::Num(a.saturating_sub(b)),
+                    Opts::Multiply => Opts::Num(a.saturating_mul(b)),
                     Opts::Divide => {
                         if b == 0 {
                             return Err("Division by Zero".into());
                         }
-                        Opts::Num(a / b)
+                        Opts::Num(a.saturating_div(b))
                     }
                     Opts::Modulo => {
                         if b == 0 {

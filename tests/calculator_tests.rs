@@ -41,7 +41,7 @@ fn test_operator_precedence() {
 fn test_parentheses() {
     assert_eq!(eval(&"(2+3)*4".to_string()).unwrap(), 20);
     assert_eq!(eval(&"2*(3+4)".to_string()).unwrap(), 14);
-    assert_eq!(eval(&"(5-10)+3".to_string()).unwrap(), 0); // floored at 0
+    assert_eq!(eval(&"(5-10)+3".to_string()).unwrap(), 3); // floored at 0
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn test_division_by_zero() {
 
 #[test]
 fn test_complex_expressions() {
-    assert_eq!(eval(&"5+2*(3+7)-4/2".to_string()).unwrap(), 24);
+    assert_eq!(eval(&"5+2*(3+7)-4/2".to_string()).unwrap(), 23);
     assert_eq!(eval(&"((10-3)*2)%4 + 1".to_string()).unwrap(), 3);
     assert_eq!(eval(&"(8/2)*(3+1)-5".to_string()).unwrap(), 11);
 }
@@ -97,4 +97,13 @@ fn test_multiple_digit_numbers() {
     assert_eq!(eval(&"12+34".to_string()).unwrap(), 46);
     assert_eq!(eval(&"100-50*2".to_string()).unwrap(), 0);
     assert_eq!(eval(&"50/2+25".to_string()).unwrap(), 50);
+}
+
+#[test]
+fn test_leons_test_test() {
+    assert_eq!(verbose_eval(&"2+3*4".to_string(), 4).unwrap(), 14);
+}
+#[test]
+fn test_leons_test() {
+    assert_eq!(verbose_eval(&"2+(3*4)".to_string(), 4).unwrap(), 14);
 }

@@ -2,5 +2,11 @@
 name = "calculator"
 version = "0.1.0"
 edition = "2024"
+authors = ["Leon Stumpf stumpfleon@gmx.de"]
+description = "A simple calculator application taking a String to calculate a result"
+license = "MIT"
+repository = "https://github.com/Cheesus42/Calculator"
+readme = "README.md"
 
 [dependencies]
+rand = "0.9.2"
