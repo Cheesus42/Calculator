@@ -64,4 +64,3 @@ fn stress_test_large_expressions() {
         duration, NUM_TESTS
     );
 }
-

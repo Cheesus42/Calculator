@@ -33,7 +33,7 @@ pub mod calculator {
     }
     // turning an expression in infix type into a vector of infix type with each element containing
     // an element
-    fn expression_to_stack(expression: &String, verbosity: u8) -> Result<Vec<Opts>, String> {
+    fn expression_to_stack(expression: &str, verbosity: u8) -> Result<Vec<Opts>, String> {
         let mut token_stack: Vec<Opts> = Vec::new();
         let mut big: bool = false;
         for m in expression.chars() {
@@ -81,7 +81,11 @@ pub mod calculator {
                         break;
                     }
                     if element.precedence() <= operator_stack.last().unwrap().precedence() {
-                        output_stack.push(operator_stack.pop().unwrap());
+                        output_stack.push(
+                            operator_stack
+                                .pop()
+                                .expect("Unexpected empty operator stack"),
+                        );
                     } else {
                         break;
                     }
@@ -160,12 +164,12 @@ pub mod calculator {
             .ok_or("Failed to receive returning Operand from stack")?
             .get_num()
     }
-    pub fn verbose_eval(expression: &String, verbosity: u8) -> Result<u32, String> {
+    pub fn verbose_eval(expression: &str, verbosity: u8) -> Result<u32, String> {
         let expression = expression_to_stack(expression, verbosity)?;
         let tokens = shunting_yard(expression, verbosity)?;
         solve_rpn(tokens, verbosity)
     }
-    pub fn eval(expression: &String) -> Result<u32, String> {
+    pub fn eval(expression: &str) -> Result<u32, String> {
         verbose_eval(expression, 0)
     }
 }
